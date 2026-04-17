@@ -465,6 +465,7 @@ model WatchlistItem {
   pokewalletId  String?  @unique
   priceUsd      Decimal? @db.Decimal(10, 2)
   priceAud      Decimal? @db.Decimal(10, 2)
+  setCategory   String?
   rank          Int?
   imageUrl      String?
   tcgplayerUrl  String?
