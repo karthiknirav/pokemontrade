@@ -159,18 +159,20 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
               onClick={() => pick(v)}
               className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-left text-sm transition hover:border-pine hover:bg-pine/5 active:scale-95"
             >
-              {/* Card thumbnail */}
-              <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-200">
-                {v.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+              {/* Card thumbnail — only rendered once lazy image URL resolves */}
+              {v.imageUrl ? (
+                <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={v.imageUrl}
                     alt={v.name}
                     className="h-full w-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
                   />
-                ) : null}
-              </div>
+                </div>
+              ) : (
+                <div className="flex h-14 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-lg">🃏</div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium text-ink">{v.name}</div>
                 <div className="truncate text-xs text-slate-500">{v.setName}{v.cardNumber ? ` · ${v.cardNumber}` : ""}{v.rarity ? ` · ${v.rarity}` : ""}</div>
@@ -254,12 +256,14 @@ export function ShowModeForm() {
           <div className="space-y-2">
             {lockedCards.map((c, i) => (
               <div key={i} className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
-                {c.variant.imageUrl ? (
-                  <div className="relative h-10 w-7 shrink-0 overflow-hidden rounded bg-slate-200">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={c.variant.imageUrl} alt={c.variant.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                  </div>
-                ) : null}
+                <div className="h-10 w-7 shrink-0 overflow-hidden rounded bg-slate-100">
+                  {c.variant.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.variant.imageUrl} alt={c.variant.name} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs">🃏</div>
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium text-ink">{c.variant.name}</div>
                   <div className="truncate text-xs text-slate-500">{c.variant.setName} · {c.variant.cardNumber}</div>
