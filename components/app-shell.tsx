@@ -74,8 +74,8 @@ export function AppShell({
         </aside>
 
         {/* Main content */}
-        <main className="flex-1">
-          <div className="rounded-[32px] border border-white/60 bg-white/80 bg-hero-grid p-5 shadow-card backdrop-blur lg:p-6">
+        <main className="min-w-0 flex-1">
+          <div className="overflow-hidden rounded-[32px] border border-white/60 bg-white/80 bg-hero-grid p-4 shadow-card backdrop-blur sm:p-5 lg:p-6">
             <div className="mb-6 flex flex-col gap-3 lg:mb-8 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.3em] text-pine">AUD Pricing Intelligence</div>

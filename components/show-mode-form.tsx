@@ -107,14 +107,14 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
       <div className="flex gap-2">
         <input
           ref={inputRef}
-          className="flex-1 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pine"
+          className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pine"
           placeholder="Card name e.g. Charizard ex 199/165"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && search()}
         />
         <input
-          className="w-24 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pine"
+          className="w-20 shrink-0 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pine"
           placeholder="A$ ask"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
@@ -124,7 +124,7 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
           type="button"
           onClick={search}
           disabled={searching}
-          className="rounded-2xl bg-ink px-4 py-2.5 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-60"
+          className="shrink-0 rounded-2xl bg-ink px-3 py-2.5 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-60"
         >
           {searching ? "…" : <Search className="h-4 w-4" />}
         </button>
@@ -139,13 +139,13 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
               key={v.id}
               type="button"
               onClick={() => pick(v)}
-              className="flex w-full items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-left text-sm transition hover:border-pine hover:bg-pine/5 active:scale-95"
+              className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-left text-sm transition hover:border-pine hover:bg-pine/5 active:scale-95"
             >
-              <div>
-                <div className="font-medium text-ink">{v.name}</div>
-                <div className="text-xs text-slate-500">{v.setName}{v.cardNumber ? ` · ${v.cardNumber}` : ""}{v.rarity ? ` · ${v.rarity}` : ""}</div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-ink">{v.name}</div>
+                <div className="truncate text-xs text-slate-500">{v.setName}{v.cardNumber ? ` · ${v.cardNumber}` : ""}{v.rarity ? ` · ${v.rarity}` : ""}</div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex shrink-0 items-center gap-2">
                 {v.priceAud ? <span className="font-semibold text-pine">A${v.priceAud.toFixed(0)}</span> : null}
                 <ChevronRight className="h-4 w-4 text-slate-400" />
               </div>
@@ -223,12 +223,12 @@ export function ShowModeForm() {
           <div className="text-sm font-medium text-ink mb-2">Cards to analyze ({lockedCards.length})</div>
           <div className="space-y-2">
             {lockedCards.map((c, i) => (
-              <div key={i} className="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 text-sm">
-                <div>
-                  <span className="font-medium text-ink">{c.variant.name}</span>
-                  <span className="ml-2 text-xs text-slate-500">{c.variant.setName} · {c.variant.cardNumber}</span>
+              <div key={i} className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-ink">{c.variant.name}</div>
+                  <div className="truncate text-xs text-slate-500">{c.variant.setName} · {c.variant.cardNumber}</div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   {c.askingPriceAud ? <span className="text-slate-600">A${c.askingPriceAud}</span> : null}
                   <button type="button" onClick={() => removeCard(i)} className="text-slate-400 hover:text-rose-500">
                     <X className="h-4 w-4" />
@@ -238,26 +238,28 @@ export function ShowModeForm() {
             ))}
           </div>
 
-          <div className="mt-3 flex gap-2">
-            <input
-              className="w-28 rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-pine"
-              placeholder="Lot total A$"
-              value={lotTotal}
-              onChange={(e) => setLotTotal(e.target.value)}
-            />
-            <div className="flex rounded-2xl border border-slate-200 overflow-hidden text-xs font-medium">
-              <button type="button" onClick={() => setUseCached(false)} className={`flex items-center gap-1 px-3 py-2 transition ${!useCached ? "bg-ink text-white" : "text-slate-500"}`}>
-                <Wifi className="h-3 w-3" /> Live
-              </button>
-              <button type="button" onClick={() => setUseCached(true)} className={`flex items-center gap-1 px-3 py-2 transition ${useCached ? "bg-ink text-white" : "text-slate-500"}`}>
-                <Database className="h-3 w-3" /> Cached
-              </button>
+          <div className="mt-3 space-y-2">
+            <div className="flex gap-2">
+              <input
+                className="w-28 shrink-0 rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-pine"
+                placeholder="Lot total A$"
+                value={lotTotal}
+                onChange={(e) => setLotTotal(e.target.value)}
+              />
+              <div className="flex overflow-hidden rounded-2xl border border-slate-200 text-xs font-medium">
+                <button type="button" onClick={() => setUseCached(false)} className={`flex items-center gap-1 px-3 py-2 transition ${!useCached ? "bg-ink text-white" : "text-slate-500"}`}>
+                  <Wifi className="h-3 w-3" /> Live
+                </button>
+                <button type="button" onClick={() => setUseCached(true)} className={`flex items-center gap-1 px-3 py-2 transition ${useCached ? "bg-ink text-white" : "text-slate-500"}`}>
+                  <Database className="h-3 w-3" /> Cached
+                </button>
+              </div>
             </div>
             <button
               type="button"
               onClick={handleAnalyze}
               disabled={isPending}
-              className="flex-1 rounded-2xl bg-ember py-2 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-60"
+              className="w-full rounded-2xl bg-ember py-3 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-60"
             >
               {isPending ? "Getting prices…" : "Get prices"}
             </button>
@@ -298,10 +300,10 @@ export function ShowModeForm() {
             ) : (
               <div key={i} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-ink">{row.name}</div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span>{row.setName}{row.cardNumber ? ` · ${row.cardNumber}` : ""}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold text-ink">{row.name}</div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span className="truncate">{row.setName}{row.cardNumber ? ` · ${row.cardNumber}` : ""}</span>
                       {row.fromCache ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5">
                           <Database className="h-3 w-3" /> {timeAgo(row.cachedAt)}
