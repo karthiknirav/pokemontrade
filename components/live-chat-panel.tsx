@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
   id?: string;
@@ -130,7 +131,25 @@ export function LiveChatPanel() {
                 key={message.id ?? `${message.role}-${index}`}
                 className={`rounded-2xl p-4 text-sm ${message.role === "assistant" ? "bg-slate-50 text-slate-700" : "bg-ink text-white"}`}
               >
-                {message.text}
+                {message.role === "assistant" ? (
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => <p className="font-bold text-base mb-1">{children}</p>,
+                      h2: ({ children }) => <p className="font-bold mb-1">{children}</p>,
+                      h3: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
+                      strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
+                      ul: ({ children }) => <ul className="my-1 space-y-0.5 pl-4 list-disc">{children}</ul>,
+                      ol: ({ children }) => <ol className="my-1 space-y-0.5 pl-4 list-decimal">{children}</ol>,
+                      li: ({ children }) => <li className="leading-snug">{children}</li>,
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      hr: () => <hr className="my-2 border-slate-200" />,
+                    }}
+                  >
+                    {message.text}
+                  </ReactMarkdown>
+                ) : (
+                  message.text
+                )}
               </div>
             ))
           )}

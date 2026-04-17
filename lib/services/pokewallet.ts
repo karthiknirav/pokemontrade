@@ -305,6 +305,7 @@ export type CardVariant = {
   priceAud: number | null;
   tcgplayerUrl: string | null;
   imageUrl: string | null;
+  setCode: string;
 };
 
 // Module-level cache: PokeWallet set_code (PTCGO code) → Pokemon TCG API set.id
@@ -339,32 +340,23 @@ export async function searchCardVariants(query: string): Promise<CardVariant[]> 
   const limit = hasCardNumber ? 12 : 30;
   const results = await searchPokewalletCards(query, limit);
 
-  const filtered = results.filter((r) => {
-    const pricing = toAudPrices(r);
-    return pricing.aud !== null && pricing.aud >= 1;
-  });
-
-  // Resolve all unique set codes → Pokemon TCG API set IDs in parallel
-  const setCodes = [...new Set(filtered.map((r) => r.card_info?.set_code).filter((c): c is string => !!c))];
-  await Promise.all(setCodes.map((code) => resolvePokemonTcgSetId(code)));
-
-  return filtered
+  return results
     .map((r) => {
       const pricing = toAudPrices(r);
-      const setCode = r.card_info?.set_code ?? "";
-      const cardNumber = r.card_info?.card_number ?? "";
-      const setId = setCode ? (setIdCache.get(setCode) ?? null) : null;
       return {
         id: r.id,
         name: r.card_info?.clean_name ?? r.card_info?.name ?? query,
         setName: r.card_info?.set_name ?? "",
-        cardNumber,
+        cardNumber: r.card_info?.card_number ?? "",
         rarity: r.card_info?.rarity ?? "",
         priceAud: pricing.aud,
         tcgplayerUrl: r.tcgplayer?.url ?? null,
-        imageUrl: buildImageUrl(setId, cardNumber)
+        // Image resolved lazily by the frontend via /api/show-mode/card-image
+        imageUrl: null as string | null,
+        setCode: r.card_info?.set_code ?? ""
       };
     })
+    .filter((v) => v.priceAud !== null && v.priceAud >= 1)
     .slice(0, 20);
 }
 

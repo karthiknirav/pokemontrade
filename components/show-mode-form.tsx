@@ -12,6 +12,7 @@ type CardVariant = {
   priceAud: number | null;
   tcgplayerUrl: string | null;
   imageUrl: string | null;
+  setCode: string;
 };
 
 type LockedCard = {
@@ -85,8 +86,24 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
       const res = await fetch(`/api/show-mode/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Search failed");
-      setVariants(data.data ?? []);
-      if ((data.data ?? []).length === 0) setError("No results — try adding card number e.g. 003/132");
+      const results: CardVariant[] = data.data ?? [];
+      setVariants(results);
+      if (results.length === 0) { setError("No results — try adding card number e.g. 003/132"); return; }
+
+      // Lazy-load images: resolve unique set codes in parallel without blocking results
+      const seen = new Set<string>();
+      const unique = results.filter((v) => v.setCode && !seen.has(v.setCode) && seen.add(v.setCode));
+      Promise.all(
+        unique.map((v) =>
+          fetch(`/api/show-mode/card-image?setCode=${encodeURIComponent(v.setCode)}&number=${encodeURIComponent(v.cardNumber)}`)
+            .then((r) => r.json())
+            .then((d) => ({ setCode: v.setCode, imageUrl: d.data?.imageUrl ?? null }))
+            .catch(() => ({ setCode: v.setCode, imageUrl: null }))
+        )
+      ).then((resolved) => {
+        const map = new Map(resolved.map((r) => [r.setCode, r.imageUrl]));
+        setVariants((prev) => prev.map((v) => ({ ...v, imageUrl: map.get(v.setCode) ?? null })));
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
