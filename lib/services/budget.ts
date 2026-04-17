@@ -1,7 +1,7 @@
 import { getCards } from "@/lib/services/products";
 import { getMarketIntelligenceForItem } from "@/lib/services/market-intelligence";
 
-type StrategyMode = "AUTO" | "SINGLE" | "BALANCED" | "BARGAINS";
+type StrategyMode = "AUTO" | "SINGLE" | "BALANCED" | "BARGAINS" | "MOMENTUM";
 
 export type BudgetRecommendation = {
   strategy: StrategyMode;
@@ -20,6 +20,7 @@ export type BudgetRecommendation = {
     verdict: string;
     confidence: string;
     reason: string;
+    changePct?: number | null;
   }>;
 };
 
@@ -28,6 +29,7 @@ function normalizeStrategy(value?: string): StrategyMode {
     case "SINGLE":
     case "BALANCED":
     case "BARGAINS":
+    case "MOMENTUM":
       return value;
     default:
       return "AUTO";
@@ -50,6 +52,14 @@ function buildCardScore(params: {
   return score;
 }
 
+function calcPriceChangePct(priceHistory: Array<{ price: unknown }>): number | null {
+  if (priceHistory.length < 2) return null;
+  const oldest = Number(priceHistory[0]?.price ?? 0);
+  const newest = Number(priceHistory[priceHistory.length - 1]?.price ?? 0);
+  if (oldest <= 0) return null;
+  return Math.round(((newest - oldest) / oldest) * 100);
+}
+
 function buildRecommendation(
   strategy: StrategyMode,
   budgetAud: number,
@@ -61,9 +71,11 @@ function buildRecommendation(
       const snapshot = card.scoreSnapshots[0];
       const intelligence = getMarketIntelligenceForItem(card);
       const price = Number(card.currentMarketPrice);
+      const changePct = calcPriceChangePct(card.priceHistory);
       return {
         card,
         price,
+        changePct,
         recommendation,
         intelligence,
         score: buildCardScore({
@@ -76,8 +88,7 @@ function buildRecommendation(
         })
       };
     })
-    .filter((candidate) => candidate.price <= budgetAud)
-    .sort((a, b) => b.score - a.score);
+    .filter((candidate) => candidate.price > 0 && candidate.price <= budgetAud);
 
   const makePick = (candidate: (typeof candidates)[number]) => ({
     slug: candidate.card.slug,
@@ -89,26 +100,52 @@ function buildRecommendation(
     fairValueHigh: candidate.intelligence.fairValueHigh,
     verdict: candidate.intelligence.listingVerdict,
     confidence: candidate.intelligence.confidence,
-    reason: candidate.intelligence.movementReasons[0] ?? candidate.recommendation?.summary ?? "Clean setup."
+    reason: candidate.intelligence.movementReasons[0] ?? candidate.recommendation?.summary ?? "Clean setup.",
+    changePct: candidate.changePct
   });
 
   if (strategy === "SINGLE") {
-    const pick = candidates[0];
+    const pick = [...candidates].sort((a, b) => b.score - a.score)[0];
     return {
       strategy,
       title: "One premium anchor card",
       totalSpend: pick?.price ?? 0,
       leftover: Math.max(0, budgetAud - (pick?.price ?? 0)),
-      rationale: "This mode concentrates the budget into the strongest current conviction rather than spreading across weaker mid-tier cards.",
+      rationale: "Concentrates the budget into the strongest current conviction rather than spreading across weaker mid-tier cards.",
       picks: pick ? [makePick(pick)] : []
     };
   }
 
-  if (strategy === "BARGAINS") {
+  if (strategy === "MOMENTUM") {
+    const sorted = [...candidates]
+      .filter((c) => c.changePct !== null)
+      .sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0));
+
     const picks: ReturnType<typeof makePick>[] = [];
     let totalSpend = 0;
-    for (const candidate of candidates.filter((item) => item.intelligence.listingVerdict !== "OVERPRICED")) {
-      if (picks.length >= 10) break;
+    for (const candidate of sorted) {
+      if (picks.length >= 20) break;
+      if (totalSpend + candidate.price > budgetAud) continue;
+      picks.push(makePick(candidate));
+      totalSpend += candidate.price;
+    }
+
+    return {
+      strategy,
+      title: "Top 20 by price momentum",
+      totalSpend,
+      leftover: Math.max(0, budgetAud - totalSpend),
+      rationale: "Ranks every card by historical price increase %. Cards that have already moved big tend to have proven collector demand — not a guarantee, but a real signal.",
+      picks
+    };
+  }
+
+  if (strategy === "BARGAINS") {
+    const sorted = [...candidates].sort((a, b) => b.score - a.score);
+    const picks: ReturnType<typeof makePick>[] = [];
+    let totalSpend = 0;
+    for (const candidate of sorted.filter((c) => c.intelligence.listingVerdict !== "OVERPRICED")) {
+      if (picks.length >= 20) break;
       if (totalSpend + candidate.price > budgetAud) continue;
       picks.push(makePick(candidate));
       totalSpend += candidate.price;
@@ -119,14 +156,15 @@ function buildRecommendation(
       title: "Spread across multiple bargain entries",
       totalSpend,
       leftover: Math.max(0, budgetAud - totalSpend),
-      rationale: "This mode prioritizes more entries and cleaner bargain bands so you are not forced into one oversized bet.",
+      rationale: "Prioritizes more entries and cleaner bargain bands so you are not forced into one oversized bet.",
       picks
     };
   }
 
+  const sorted = [...candidates].sort((a, b) => b.score - a.score);
   const balancedPicks: ReturnType<typeof makePick>[] = [];
   let balancedSpend = 0;
-  for (const candidate of candidates) {
+  for (const candidate of sorted) {
     if (balancedPicks.length >= 4) break;
     if (balancedSpend + candidate.price > budgetAud) continue;
     balancedPicks.push(makePick(candidate));
@@ -138,21 +176,19 @@ function buildRecommendation(
     title: "Balanced basket",
     totalSpend: balancedSpend,
     leftover: Math.max(0, budgetAud - balancedSpend),
-    rationale: "This mode mixes liquidity and upside so you can hold more than one position without drifting into bulk junk.",
+    rationale: "Mixes liquidity and upside so you can hold more than one position without drifting into bulk junk.",
     picks: balancedPicks
   };
 
-  if (strategy === "BALANCED") {
-    return balancedRecommendation;
-  }
+  if (strategy === "BALANCED") return balancedRecommendation;
 
   const singleRecommendation = buildRecommendation("SINGLE", budgetAud, cards);
   const bargainRecommendation = buildRecommendation("BARGAINS", budgetAud, cards);
-  const options = [singleRecommendation, balancedRecommendation, bargainRecommendation].filter((option) => option.picks.length > 0);
+  const options = [singleRecommendation, balancedRecommendation, bargainRecommendation].filter((o) => o.picks.length > 0);
   return (
     options.sort((a, b) => {
-      const aScore = a.picks.reduce((sum, pick) => sum + (pick.verdict === "UNDERVALUED" ? 2 : 1), 0) + a.totalSpend / Math.max(budgetAud, 1);
-      const bScore = b.picks.reduce((sum, pick) => sum + (pick.verdict === "UNDERVALUED" ? 2 : 1), 0) + b.totalSpend / Math.max(budgetAud, 1);
+      const aScore = a.picks.reduce((sum, p) => sum + (p.verdict === "UNDERVALUED" ? 2 : 1), 0) + a.totalSpend / Math.max(budgetAud, 1);
+      const bScore = b.picks.reduce((sum, p) => sum + (p.verdict === "UNDERVALUED" ? 2 : 1), 0) + b.totalSpend / Math.max(budgetAud, 1);
       return bScore - aScore;
     })[0] ?? balancedRecommendation
   );
@@ -162,6 +198,5 @@ export async function getBudgetRecommendation(input: { budgetAud: number; strate
   const budgetAud = Number.isFinite(input.budgetAud) ? Math.max(20, input.budgetAud) : 300;
   const strategy = normalizeStrategy(input.strategy);
   const cards = await getCards();
-
   return buildRecommendation(strategy, budgetAud, cards);
 }

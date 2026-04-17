@@ -43,6 +43,7 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
               <option value="SINGLE">One premium card</option>
               <option value="BALANCED">2-4 balanced cards</option>
               <option value="BARGAINS">As many bargains as fit</option>
+              <option value="MOMENTUM">Top 20 by price momentum</option>
             </select>
           </label>
           <button className="rounded-2xl bg-pine px-5 py-3 font-medium text-white transition hover:bg-pine/90" type="submit">
@@ -82,7 +83,17 @@ export default async function BudgetPage({ searchParams }: { searchParams: Searc
                   <div className="mt-2 text-sm text-slate-600">{pick.reason}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold">{formatAud(pick.price)}</div>
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="font-semibold">{formatAud(pick.price)}</span>
+                    {pick.changePct != null ? (
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${pick.changePct >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+                      >
+                        {pick.changePct >= 0 ? "+" : ""}
+                        {pick.changePct}%
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-sm text-slate-500">
                     {pick.verdict} - {pick.confidence} confidence
                   </div>

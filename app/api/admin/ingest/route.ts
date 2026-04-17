@@ -26,7 +26,8 @@ export async function POST(request: Request) {
   const [providerRuns, retailerRun, pokewalletRun] = await Promise.all([
     scope === "retailers" || scope === "pokewallet" ? Promise.resolve([]) : runIngestion(body.provider),
     scope === "providers" || scope === "pokewallet" ? Promise.resolve(null) : runRetailerIngestion(),
-    scope === "retailers"
+    // Only run pokewallet sync for explicit pokewallet/all — not per-provider or retailer syncs
+    scope === "retailers" || scope === "providers"
       ? Promise.resolve(null)
       : syncPokewalletCardSnapshots({
           rolling: {

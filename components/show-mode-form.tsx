@@ -97,7 +97,7 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
         unique.map((v) =>
           fetch(`/api/show-mode/card-image?setCode=${encodeURIComponent(v.setCode)}&number=${encodeURIComponent(v.cardNumber)}`)
             .then((r) => r.json())
-            .then((d) => ({ setCode: v.setCode, imageUrl: d.data?.imageUrl ?? null }))
+            .then((d) => ({ setCode: v.setCode, imageUrl: d.imageUrl ?? null }))
             .catch(() => ({ setCode: v.setCode, imageUrl: null }))
         )
       ).then((resolved) => {
