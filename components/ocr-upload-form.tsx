@@ -35,8 +35,14 @@ export function OcrUploadForm() {
         method: "POST",
         body: formData
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "OCR failed");
+      const text = await response.text();
+      let data: Record<string, unknown> = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server error (${response.status}): ${text.slice(0, 120)}`);
+      }
+      if (!response.ok) throw new Error((data.error as string) ?? "OCR failed");
       setResult(data.summary ?? "OCR completed.");
       setEntries(Array.isArray(data.entries) ? data.entries : []);
       setShowModeLines(Array.isArray(data.showModeLines) ? data.showModeLines : []);

@@ -43,31 +43,36 @@ export async function POST(request: Request) {
 
   const client = new Anthropic({ apiKey });
 
-  const response = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001",
-    max_tokens: 1024,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mimeType, data: base64 }
-          },
-          {
-            type: "text",
-            text: 'Read this Pokemon TCG show-floor image and extract up to 15 visible card or product names with any visible asking price in AUD. Return strict JSON only: {"summary":"...","entries":[{"label":"...","priceAud":123.45}]}. If no price is visible, set priceAud to null.'
-          }
-        ]
-      }
-    ]
-  });
-
-  const text = response.content
-    .filter((block): block is Anthropic.TextBlock => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
+  let text: string;
+  try {
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: { type: "base64", media_type: mimeType, data: base64 }
+            },
+            {
+              type: "text",
+              text: 'Read this Pokemon TCG show-floor image and extract up to 15 visible card or product names with any visible asking price in AUD. Return strict JSON only: {"summary":"...","entries":[{"label":"...","priceAud":123.45}]}. If no price is visible, set priceAud to null.'
+            }
+          ]
+        }
+      ]
+    });
+    text = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      .map((block) => block.text)
+      .join("\n")
+      .trim();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Claude API error";
+    return apiError(`Image analysis failed: ${msg}`, 500);
+  }
 
   const parsed = extractJsonBlock(text);
   const entries = (parsed?.entries ?? [])
