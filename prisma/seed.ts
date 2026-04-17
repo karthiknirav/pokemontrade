@@ -96,19 +96,51 @@ async function main() {
     }
   });
 
-  // Real upcoming set — Destined Rivals releases May 2025 (JP) / ~Aug 2026 (EN est.)
-  const setDestinedRivals = await prisma.tcgSet.create({
+  // Mega Evolution — Perfect Order (ME03) — released March 27 2026
+  const setPerfectOrder = await prisma.tcgSet.create({
     data: {
-      name: "Destined Rivals",
-      slug: slugify("Destined Rivals"),
-      series: "Scarlet & Violet",
+      name: "Mega Evolution — Perfect Order",
+      slug: slugify("Mega Evolution Perfect Order"),
+      series: "Mega Evolution",
       language: CardLanguage.ENGLISH,
-      releaseDate: new Date("2026-08-01"),       // future → preorder
+      releaseDate: new Date("2026-03-27"),
+      msrpAud: 59.99,
+      blueChip: true,
+      speculative: false,
+      overprintedRisk: 30,
+      notes: "Mega Zygarde ex. Tied to Legends: Z-A hype. Released March 27 2026 — early secondary market forming."
+    }
+  });
+
+  // Mega Evolution — Chaos Rising (ME04) — releases May 22 2026 (PREORDER)
+  const setChaosRising = await prisma.tcgSet.create({
+    data: {
+      name: "Mega Evolution — Chaos Rising",
+      slug: slugify("Mega Evolution Chaos Rising"),
+      series: "Mega Evolution",
+      language: CardLanguage.ENGLISH,
+      releaseDate: new Date("2026-05-22"),
       msrpAud: 59.99,
       blueChip: false,
       speculative: true,
-      overprintedRisk: 50,
-      notes: "Upcoming EN set. Japanese version released May 2025. Strong early interest."
+      overprintedRisk: 40,
+      notes: "Mega Greninja ex, Mega Pyroar ex. Prerelease May 9-17. Strong JP reception."
+    }
+  });
+
+  // Mega Evolution — Pitch Black (ME05) — releases July 17 2026 (PREORDER)
+  const setPitchBlack = await prisma.tcgSet.create({
+    data: {
+      name: "Mega Evolution — Pitch Black",
+      slug: slugify("Mega Evolution Pitch Black"),
+      series: "Mega Evolution",
+      language: CardLanguage.ENGLISH,
+      releaseDate: new Date("2026-07-17"),
+      msrpAud: 59.99,
+      blueChip: false,
+      speculative: true,
+      overprintedRisk: 45,
+      notes: "Mega Darkrai ex, ninja theme. Prerelease July 4-12. Pricing TBC — est. ~$139-149 ETB."
     }
   });
 
@@ -229,25 +261,69 @@ async function main() {
     }
   });
 
-  const etbDestined = await prisma.product.create({
+  const etbPerfectOrder = await prisma.product.create({
     data: {
-      name: "Destined Rivals Elite Trainer Box",
-      slug: slugify("Destined Rivals Elite Trainer Box"),
+      name: "Perfect Order Elite Trainer Box",
+      slug: slugify("Perfect Order Elite Trainer Box"),
       productType: ProductType.ELITE_TRAINER_BOX,
       category: ItemCategory.SEALED,
       sealed: true,
       language: CardLanguage.ENGLISH,
-      currentMarketPrice: 69,
-      lastSoldPrice: 69,
+      currentMarketPrice: 139.95,
+      lastSoldPrice: 135,
+      priceSource: "EB Games AU / Trainer Hub",
+      liquidityScore: 74,
+      popularityScore: 82,
+      profitScore: 70,
+      releaseDate: new Date("2026-03-27"),
+      isPreorder: false,
+      inStock: true,
+      notes: "Released March 27 2026. Mega Zygarde ex. Selling near MSRP. Legends: Z-A tie-in driving interest.",
+      setId: setPerfectOrder.id
+    }
+  });
+
+  const etbChaosRising = await prisma.product.create({
+    data: {
+      name: "Chaos Rising Elite Trainer Box",
+      slug: slugify("Chaos Rising Elite Trainer Box"),
+      productType: ProductType.ELITE_TRAINER_BOX,
+      category: ItemCategory.SEALED,
+      sealed: true,
+      language: CardLanguage.ENGLISH,
+      currentMarketPrice: 139.95,
+      lastSoldPrice: 139.95,
       priceSource: "EB Games AU preorder",
-      liquidityScore: 60,
-      popularityScore: 72,
-      profitScore: 58,
-      releaseDate: new Date("2026-08-01"),
+      liquidityScore: 62,
+      popularityScore: 76,
+      profitScore: 64,
+      releaseDate: new Date("2026-05-22"),
       isPreorder: true,
       inStock: true,
-      notes: "Early preorder at MSRP. JP version had strong reception. Speculative buy.",
-      setId: setDestinedRivals.id
+      notes: "Preorder now. Mega Greninja ex headline card. Prerelease May 9-17. Booster box $329.95.",
+      setId: setChaosRising.id
+    }
+  });
+
+  const etbPitchBlack = await prisma.product.create({
+    data: {
+      name: "Pitch Black Elite Trainer Box",
+      slug: slugify("Pitch Black Elite Trainer Box"),
+      productType: ProductType.ELITE_TRAINER_BOX,
+      category: ItemCategory.SEALED,
+      sealed: true,
+      language: CardLanguage.ENGLISH,
+      currentMarketPrice: 139.95,
+      lastSoldPrice: 139.95,
+      priceSource: "Estimated — EB Games AU listing TBC",
+      liquidityScore: 55,
+      popularityScore: 72,
+      profitScore: 58,
+      releaseDate: new Date("2026-07-17"),
+      isPreorder: true,
+      inStock: false,
+      notes: "July 17 2026. Mega Darkrai ex. Prerelease July 4-12. Pricing not yet confirmed by AU retailers.",
+      setId: setPitchBlack.id
     }
   });
 
@@ -448,13 +524,30 @@ async function main() {
         productId: bundleTwilight.id
       },
       {
-        title: etbDestined.name,
-        normalizedPrice: 69,
+        title: etbPerfectOrder.name,
+        normalizedPrice: 139.95,
+        status: InventoryStatus.IN_STOCK,
+        productUrl: "https://www.ebgames.com.au/search?searchTerm=perfect+order+elite+trainer+box",
+        retailerId: ebGames.id,
+        productId: etbPerfectOrder.id
+      },
+      {
+        title: etbChaosRising.name,
+        normalizedPrice: 139.95,
         status: InventoryStatus.PREORDER,
         isPreorder: true,
-        productUrl: "https://www.ebgames.com.au/search?searchTerm=destined+rivals",
+        productUrl: "https://www.ebgames.com.au/search?searchTerm=chaos+rising+elite+trainer+box",
         retailerId: ebGames.id,
-        productId: etbDestined.id
+        productId: etbChaosRising.id
+      },
+      {
+        title: etbPitchBlack.name,
+        normalizedPrice: 139.95,
+        status: InventoryStatus.PREORDER,
+        isPreorder: true,
+        productUrl: "https://www.ebgames.com.au/search?searchTerm=pitch+black+elite+trainer+box",
+        retailerId: ebGames.id,
+        productId: etbPitchBlack.id
       },
       // Singles at Gameology and Cherry Collectables
       {
@@ -498,7 +591,9 @@ async function main() {
   await prisma.sourceLink.createMany({
     data: [
       { providerId: providerBySlug["eb-games"].id,            productId: etbPrismatic.id,  label: etbPrismatic.name,  sourceUrl: "https://www.ebgames.com.au/search?searchTerm=prismatic+evolutions+elite+trainer+box" },
-      { providerId: providerBySlug["eb-games"].id,            productId: etbDestined.id,   label: etbDestined.name,   sourceUrl: "https://www.ebgames.com.au/search?searchTerm=destined+rivals+elite+trainer+box" },
+      { providerId: providerBySlug["eb-games"].id, productId: etbPerfectOrder.id, label: etbPerfectOrder.name, sourceUrl: "https://www.ebgames.com.au/search?searchTerm=perfect+order+elite+trainer+box" },
+      { providerId: providerBySlug["eb-games"].id, productId: etbChaosRising.id,  label: etbChaosRising.name,  sourceUrl: "https://www.ebgames.com.au/search?searchTerm=chaos+rising+elite+trainer+box" },
+      { providerId: providerBySlug["eb-games"].id, productId: etbPitchBlack.id,   label: etbPitchBlack.name,   sourceUrl: "https://www.ebgames.com.au/search?searchTerm=pitch+black+elite+trainer+box" },
       { providerId: providerBySlug["jb-hi-fi"].id,            productId: bundle151.id,     label: bundle151.name,     sourceUrl: "https://www.jbhifi.com.au/search?q=pokemon+151+booster+bundle&type=product" },
       { providerId: providerBySlug["kmart"].id,               productId: bundleTwilight.id,label: bundleTwilight.name,sourceUrl: "https://www.kmart.com.au/search/?searchTerm=twilight+masquerade" },
       { providerId: providerBySlug["gameology"].id,           cardId: gengarEx.id,         label: gengarEx.name,      sourceUrl: "https://www.gameology.com.au/products/gengar-ex-197-165-sv-pokemon-151" },
@@ -516,7 +611,9 @@ async function main() {
   await prisma.listingSnapshot.createMany({
     data: [
       { providerId: providerBySlug["eb-games"].id,  sourceLinkId: findLinkId("https://www.ebgames.com.au/search?searchTerm=prismatic+evolutions+elite+trainer+box"), productId: etbPrismatic.id,  sourceUrl: "https://www.ebgames.com.au/search?searchTerm=prismatic+evolutions+elite+trainer+box", sourceTitle: etbPrismatic.name,  normalizedPriceAud: 59.99, stockStatus: InventoryStatus.OUT_OF_STOCK, isPreorder: false, sourceConfidence: 80 },
-      { providerId: providerBySlug["eb-games"].id,  sourceLinkId: findLinkId("https://www.ebgames.com.au/search?searchTerm=destined+rivals+elite+trainer+box"),          productId: etbDestined.id,   sourceUrl: "https://www.ebgames.com.au/search?searchTerm=destined+rivals+elite+trainer+box",          sourceTitle: etbDestined.name,   normalizedPriceAud: 69,    stockStatus: InventoryStatus.PREORDER,     isPreorder: true,  sourceConfidence: 84 },
+      { providerId: providerBySlug["eb-games"].id, sourceLinkId: findLinkId("https://www.ebgames.com.au/search?searchTerm=perfect+order+elite+trainer+box"), productId: etbPerfectOrder.id, sourceUrl: "https://www.ebgames.com.au/search?searchTerm=perfect+order+elite+trainer+box", sourceTitle: etbPerfectOrder.name, normalizedPriceAud: 139.95, stockStatus: InventoryStatus.IN_STOCK,  isPreorder: false, sourceConfidence: 84 },
+      { providerId: providerBySlug["eb-games"].id, sourceLinkId: findLinkId("https://www.ebgames.com.au/search?searchTerm=chaos+rising+elite+trainer+box"),  productId: etbChaosRising.id,  sourceUrl: "https://www.ebgames.com.au/search?searchTerm=chaos+rising+elite+trainer+box",  sourceTitle: etbChaosRising.name,  normalizedPriceAud: 139.95, stockStatus: InventoryStatus.PREORDER, isPreorder: true,  sourceConfidence: 82 },
+      { providerId: providerBySlug["eb-games"].id, sourceLinkId: findLinkId("https://www.ebgames.com.au/search?searchTerm=pitch+black+elite+trainer+box"),   productId: etbPitchBlack.id,   sourceUrl: "https://www.ebgames.com.au/search?searchTerm=pitch+black+elite+trainer+box",   sourceTitle: etbPitchBlack.name,   normalizedPriceAud: 139.95, stockStatus: InventoryStatus.PREORDER, isPreorder: true,  sourceConfidence: 70 },
       { providerId: providerBySlug["jb-hi-fi"].id,  sourceLinkId: findLinkId("https://www.jbhifi.com.au/search?q=pokemon+151+booster+bundle&type=product"),               productId: bundle151.id,     sourceUrl: "https://www.jbhifi.com.au/search?q=pokemon+151+booster+bundle&type=product",               sourceTitle: bundle151.name,     normalizedPriceAud: 68,    stockStatus: InventoryStatus.IN_STOCK,                        sourceConfidence: 78 },
       { providerId: providerBySlug["gameology"].id, sourceLinkId: findLinkId("https://www.gameology.com.au/products/gengar-ex-197-165-sv-pokemon-151"),                   cardId: gengarEx.id,         sourceUrl: "https://www.gameology.com.au/products/gengar-ex-197-165-sv-pokemon-151",                   sourceTitle: gengarEx.name,      normalizedPriceAud: 48,    stockStatus: InventoryStatus.IN_STOCK,                        sourceConfidence: 88 },
       { providerId: providerBySlug["gameology"].id, sourceLinkId: findLinkId("https://www.gameology.com.au/products/venusaur-ex-198-165-sv-pokemon-151"),                  cardId: venusaurEx.id,       sourceUrl: "https://www.gameology.com.au/products/venusaur-ex-198-165-sv-pokemon-151",                  sourceTitle: venusaurEx.name,    normalizedPriceAud: 38,    stockStatus: InventoryStatus.IN_STOCK,                        sourceConfidence: 88 },
@@ -591,7 +688,9 @@ async function main() {
     [bundle151,     [0.78, 0.85, 0.90, 0.95, 1.00]],
     [etbPrismatic,  [0.65, 0.75, 0.85, 0.93, 1.00]],
     [bundleTwilight,[0.88, 0.91, 0.94, 0.97, 1.00]],
-    [etbDestined,   [1.00, 1.00, 1.00, 1.00, 1.00]]  // preorder — flat at MSRP
+    [etbPerfectOrder, [1.00, 1.00, 1.00, 1.00, 1.00]],
+    [etbChaosRising,  [1.00, 1.00, 1.00, 1.00, 1.00]],
+    [etbPitchBlack,   [1.00, 1.00, 1.00, 1.00, 1.00]]
   ] as const) {
     await prisma.priceHistory.createMany({
       data: historyDates.map((recordedAt, i) => ({
@@ -606,9 +705,16 @@ async function main() {
   // -------------------------------------------------------------------------
   // Scoring — budget-aware (all cards affordable within $500)
   // -------------------------------------------------------------------------
-  const allSets: Record<string, typeof set151> = { [set151.id]: set151, [setTwilightMasquerade.id]: setTwilightMasquerade, [setPrismaticEvolutions.id]: setPrismaticEvolutions, [setDestinedRivals.id]: setDestinedRivals };
+  const allSets: Record<string, typeof set151> = {
+    [set151.id]: set151,
+    [setTwilightMasquerade.id]: setTwilightMasquerade,
+    [setPrismaticEvolutions.id]: setPrismaticEvolutions,
+    [setPerfectOrder.id]: setPerfectOrder,
+    [setChaosRising.id]: setChaosRising,
+    [setPitchBlack.id]: setPitchBlack
+  };
 
-  for (const product of [bundle151, etbPrismatic, bundleTwilight, etbDestined]) {
+  for (const product of [bundle151, etbPrismatic, bundleTwilight, etbPerfectOrder, etbChaosRising, etbPitchBlack]) {
     const set = allSets[product.setId ?? ""];
     const result = scoreItem({
       item: product,
@@ -670,7 +776,7 @@ async function main() {
       { userId: user.id, cardId: gengarEx.id,       type: AlertType.PRICE_DROP,   status: AlertStatus.ACTIVE, targetPriceAud: 60,  notes: "Sell target — take profit at $60." },
       { userId: user.id, cardId: espeonEx.id,        type: AlertType.PRICE_DROP,   status: AlertStatus.ACTIVE, targetPriceAud: 35,  notes: "Buy more if drops to $35." },
       { userId: user.id, productId: etbPrismatic.id, type: AlertType.RESTOCK,      status: AlertStatus.ACTIVE,                       notes: "Alert if Prismatic ETB restocks at any AU retailer at MSRP." },
-      { userId: user.id, productId: etbDestined.id,  type: AlertType.VALUE_BUY,    status: AlertStatus.ACTIVE,                       notes: "Monitor Destined Rivals preorder — buy if confidence hits Medium." }
+      { userId: user.id, productId: etbChaosRising.id, type: AlertType.VALUE_BUY, status: AlertStatus.ACTIVE, notes: "Chaos Rising preorder — lock in before May 22 release." }
     ]
   });
 
