@@ -18,11 +18,11 @@ export default async function LoginPage() {
               Pokemon<br />Profit Intel
             </h1>
             <p className="mt-5 text-lg font-medium text-slate-200">
-              A dad &amp; son Pokémon journey — gotta catch 'em smart.
+              A dad &amp; son Pokémon journey — gotta catch &apos;em smart.
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
               Every trainer needs a Pokédex. Every collector needs this.
-              Live AUD prices, negotiation targets, and show-floor decisions — so the adventure doesn't cost a fortune.
+              Live AUD prices, negotiation targets, and show-floor decisions &mdash; so the adventure doesn&apos;t cost a fortune.
             </p>
           </div>
 
