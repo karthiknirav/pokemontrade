@@ -18,7 +18,7 @@ export default async function LoginPage() {
               Pokemon<br />Profit Intel
             </h1>
             <p className="mt-5 text-lg font-medium text-slate-200">
-              A dad &amp; son Pokémon journey — with better prices.
+              A dad &amp; son Pokémon journey — gotta catch 'em smart.
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
               Every trainer needs a Pokédex. Every collector needs this.
