@@ -2,6 +2,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getSession } from "@/lib/auth/token";
 import { apiError, apiOk } from "@/lib/api";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 function extractJsonBlock(text: string) {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
