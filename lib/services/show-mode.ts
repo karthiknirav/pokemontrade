@@ -79,23 +79,27 @@ export async function analyzeShowLot(input: AnalyzeInput) {
   );
 
   const matchedRows = rows.filter((r): r is MatchedRow => r.matchType === "matched");
+  // Only include rows where asking price exists for summary decision
+  const pricedRows = matchedRows.filter((r) => r.askingPriceAud !== null);
   const totalFairValue = matchedRows.reduce((sum, r) => sum + r.marketPriceAud, 0);
   const totalAsk =
     input.totalAskingPriceAud ??
-    matchedRows.reduce((sum, r) => sum + (r.askingPriceAud ?? r.marketPriceAud), 0);
-  const totalNegotiation = matchedRows.reduce((sum, r) => sum + r.negotiationTarget, 0);
-  const underMarketCount = matchedRows.filter(
+    pricedRows.reduce((sum, r) => sum + (r.askingPriceAud ?? 0), 0);
+  const totalNegotiation = pricedRows.reduce((sum, r) => sum + r.negotiationTarget, 0);
+  const underMarketCount = pricedRows.filter(
     (r) => (r.askingPriceAud ?? r.marketPriceAud) <= r.bargainBuyPrice
   ).length;
 
   const decision =
     matchedRows.length === 0
       ? "No matches found"
-      : totalAsk <= totalNegotiation
-        ? "Buy the lot"
-        : totalAsk <= totalFairValue
-          ? "Negotiate"
-          : "Pass or cherry-pick";
+      : pricedRows.length === 0
+        ? "Enter asking prices to decide"
+        : totalAsk <= totalNegotiation
+          ? "Buy the lot"
+          : totalAsk <= totalFairValue
+            ? "Negotiate"
+            : "Pass or cherry-pick";
 
   return {
     rows,

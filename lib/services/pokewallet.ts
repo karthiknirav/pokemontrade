@@ -122,7 +122,8 @@ function chooseUsdPrice(tcg?: { prices?: PokewalletPrice[] } | null) {
   const prices = tcg?.prices ?? [];
   for (const price of prices) {
     const candidate = price.market_price ?? price.mid_price ?? price.low_price ?? price.direct_low_price;
-    if (typeof candidate === "number" && candidate > 0) {
+    // Ignore junk prices under $1 USD — likely a bad match
+    if (typeof candidate === "number" && candidate >= 1) {
       return candidate;
     }
   }
