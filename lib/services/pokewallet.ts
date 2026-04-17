@@ -307,7 +307,10 @@ export type CardVariant = {
 };
 
 export async function searchCardVariants(query: string): Promise<CardVariant[]> {
-  const results = await searchPokewalletCards(query, 12);
+  // Broad queries (short name, no card number) return many variants — fetch more
+  const hasCardNumber = /\d+\/\d+/.test(query);
+  const limit = hasCardNumber ? 12 : 30;
+  const results = await searchPokewalletCards(query, limit);
   return results
     .map((r) => {
       const pricing = toAudPrices(r);
@@ -321,7 +324,8 @@ export async function searchCardVariants(query: string): Promise<CardVariant[]> 
         tcgplayerUrl: r.tcgplayer?.url ?? null
       };
     })
-    .filter((v) => v.priceAud !== null && v.priceAud >= 1);
+    .filter((v) => v.priceAud !== null && v.priceAud >= 1)
+    .slice(0, 20);
 }
 
 export async function liveCardLookup(query: string): Promise<LiveCardPrice> {
