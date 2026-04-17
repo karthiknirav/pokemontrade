@@ -1,0 +1,474 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  BOOSTER_BOX
+  BOOSTER_BUNDLE
+  ELITE_TRAINER_BOX
+  COLLECTION_BOX
+  TIN
+  LOOSE_PACK
+  SINGLE_CARD
+}
+
+enum ItemCategory {
+  SEALED
+  SINGLE
+}
+
+enum CardLanguage {
+  ENGLISH
+  JAPANESE
+}
+
+enum InventoryStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  PREORDER
+  PLACEHOLDER
+}
+
+enum AlertType {
+  PRICE_DROP
+  RESTOCK
+  VALUE_BUY
+}
+
+enum AlertStatus {
+  ACTIVE
+  PAUSED
+  TRIGGERED
+}
+
+enum RecommendationAction {
+  BUY
+  MAYBE
+  PASS
+  RIP
+  HOLD_SEALED
+  BUY_SINGLES_INSTEAD
+}
+
+enum PortfolioStatus {
+  SEALED
+  RIPPED
+  GRADED
+  SOLD
+  HELD
+}
+
+enum ProviderType {
+  RETAILER
+  API
+  MARKETPLACE
+  MANUAL
+}
+
+enum IngestRunStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String
+  passwordHash   String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  portfolioItems PortfolioItem[]
+  alerts         Alert[]
+}
+
+model TcgSet {
+  id               String          @id @default(cuid())
+  name             String
+  slug             String          @unique
+  series           String
+  language         CardLanguage
+  releaseDate      DateTime
+  msrpAud          Decimal?        @db.Decimal(10, 2)
+  blueChip         Boolean         @default(false)
+  speculative      Boolean         @default(false)
+  overprintedRisk  Int             @default(50)
+  notes            String?
+  cards            Card[]
+  products         Product[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Card {
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  number             String
+  rarity             String
+  pokemonCharacter   String
+  language           CardLanguage
+  currentMarketPrice Decimal           @db.Decimal(10, 2)
+  lastSoldPrice      Decimal           @db.Decimal(10, 2)
+  psa10Price         Decimal?          @db.Decimal(10, 2)
+  liquidityScore     Int               @default(50)
+  popularityScore    Int               @default(50)
+  profitScore        Int               @default(50)
+  notes              String?
+  setId              String
+  set                TcgSet            @relation(fields: [setId], references: [id], onDelete: Cascade)
+  priceHistory       PriceHistory[]
+  listings           ProductListing[]
+  recommendations    Recommendation[]
+  scoreSnapshots     ScoreSnapshot[]
+  portfolioItems     PortfolioItem[]
+  alerts             Alert[]
+  sourceLinks        SourceLink[]
+  rawSourceRecords   RawSourceRecord[]
+  listingSnapshots   ListingSnapshot[]
+  salesRecords       SalesRecord[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Retailer {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  slug        String           @unique
+  websiteUrl  String
+  country     String           @default("Australia")
+  currency    String           @default("AUD")
+  isActive    Boolean          @default(true)
+  listings    ProductListing[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Product {
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  productType        ProductType
+  category           ItemCategory
+  sealed             Boolean           @default(true)
+  language           CardLanguage
+  currentMarketPrice Decimal           @db.Decimal(10, 2)
+  lastSoldPrice      Decimal           @db.Decimal(10, 2)
+  priceSource        String
+  psa10Price         Decimal?          @db.Decimal(10, 2)
+  liquidityScore     Int               @default(50)
+  popularityScore    Int               @default(50)
+  profitScore        Int               @default(50)
+  releaseDate        DateTime
+  isPreorder         Boolean           @default(false)
+  inStock            Boolean           @default(false)
+  notes              String?
+  setId              String?
+  set                TcgSet?           @relation(fields: [setId], references: [id], onDelete: SetNull)
+  priceHistory       PriceHistory[]
+  listings           ProductListing[]
+  recommendations    Recommendation[]
+  scoreSnapshots     ScoreSnapshot[]
+  portfolioItems     PortfolioItem[]
+  alerts             Alert[]
+  sourceLinks        SourceLink[]
+  rawSourceRecords   RawSourceRecord[]
+  listingSnapshots   ListingSnapshot[]
+  salesRecords       SalesRecord[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model SourceProvider {
+  id               String            @id @default(cuid())
+  slug             String            @unique
+  name             String            @unique
+  providerType     ProviderType
+  websiteUrl       String
+  logoUrl          String?
+  logoLabel        String?
+  country          String            @default("Australia")
+  currency         String            @default("AUD")
+  trustScore       Int               @default(70)
+  refreshMinutes   Int               @default(30)
+  isActive         Boolean           @default(true)
+  sourceLinks      SourceLink[]
+  ingestRuns       IngestRun[]
+  rawSourceRecords RawSourceRecord[]
+  listingSnapshots ListingSnapshot[]
+  salesRecords     SalesRecord[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model SourceLink {
+  id              String           @id @default(cuid())
+  providerId      String
+  productId       String?
+  cardId          String?
+  label           String?
+  sourceUrl       String
+  providerItemId  String?
+  isActive        Boolean          @default(true)
+  provider        SourceProvider   @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  product         Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card            Card?            @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  rawSourceRecords RawSourceRecord[]
+  listingSnapshot ListingSnapshot?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([providerId, productId])
+  @@index([providerId, cardId])
+}
+
+model IngestRun {
+  id            String          @id @default(cuid())
+  providerId    String
+  status        IngestRunStatus @default(RUNNING)
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  fetchedCount  Int             @default(0)
+  matchedCount  Int             @default(0)
+  createdCount  Int             @default(0)
+  updatedCount  Int             @default(0)
+  errorSummary  String?
+  provider      SourceProvider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  rawSourceRecords RawSourceRecord[]
+}
+
+model RawSourceRecord {
+  id              String         @id @default(cuid())
+  providerId      String
+  ingestRunId     String
+  sourceLinkId    String?
+  sourceUrl       String
+  sourceTitle     String?
+  priceText       String?
+  stockText       String?
+  payload         Json?
+  fetchedAt       DateTime       @default(now())
+  matchedProductId String?
+  matchedCardId   String?
+  provider        SourceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  ingestRun       IngestRun      @relation(fields: [ingestRunId], references: [id], onDelete: Cascade)
+  sourceLink      SourceLink?    @relation(fields: [sourceLinkId], references: [id], onDelete: SetNull)
+  product         Product?       @relation(fields: [matchedProductId], references: [id], onDelete: SetNull)
+  card            Card?          @relation(fields: [matchedCardId], references: [id], onDelete: SetNull)
+
+  @@index([providerId, fetchedAt])
+  @@index([matchedProductId])
+  @@index([matchedCardId])
+}
+
+model ListingSnapshot {
+  id                String          @id @default(cuid())
+  providerId        String
+  sourceLinkId      String?         @unique
+  productId         String?
+  cardId            String?
+  sourceUrl         String
+  sourceTitle       String
+  providerItemId    String?
+  normalizedPriceAud Decimal        @db.Decimal(10, 2)
+  currency          String          @default("AUD")
+  stockStatus       InventoryStatus
+  isPreorder        Boolean         @default(false)
+  isPlaceholder     Boolean         @default(false)
+  firstSeenAt       DateTime        @default(now())
+  lastSeenAt        DateTime        @default(now())
+  restockDetectedAt DateTime?
+  fetchedAt         DateTime        @default(now())
+  sourceConfidence  Int             @default(70)
+  provider          SourceProvider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  sourceLink        SourceLink?     @relation(fields: [sourceLinkId], references: [id], onDelete: SetNull)
+  product           Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card              Card?           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([productId, fetchedAt])
+  @@index([cardId, fetchedAt])
+  @@index([providerId, fetchedAt])
+}
+
+model SalesRecord {
+  id                 String         @id @default(cuid())
+  providerId         String
+  productId          String?
+  cardId             String?
+  sourceTitle        String
+  saleUrl            String?
+  normalizedPriceAud Decimal        @db.Decimal(10, 2)
+  currency           String         @default("AUD")
+  condition          String?
+  shippingAud        Decimal?       @db.Decimal(10, 2)
+  soldAt             DateTime
+  sourceConfidence   Int            @default(60)
+  provider           SourceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  product            Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card               Card?          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt          DateTime       @default(now())
+
+  @@index([productId, soldAt])
+  @@index([cardId, soldAt])
+  @@index([providerId, soldAt])
+}
+
+model ProductListing {
+  id               String          @id @default(cuid())
+  title            String
+  normalizedPrice  Decimal         @db.Decimal(10, 2)
+  currency         String          @default("AUD")
+  status           InventoryStatus
+  isPlaceholder    Boolean         @default(false)
+  isPreorder       Boolean         @default(false)
+  productUrl       String
+  retailerId       String
+  productId        String?
+  cardId           String?
+  detectedAt       DateTime        @default(now())
+  retailer         Retailer        @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  product          Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card             Card?           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([cardId])
+}
+
+model PriceHistory {
+  id          String       @id @default(cuid())
+  recordedAt  DateTime     @default(now())
+  price       Decimal      @db.Decimal(10, 2)
+  source      String
+  productId   String?
+  cardId      String?
+  product     Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card        Card?        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([productId, recordedAt])
+  @@index([cardId, recordedAt])
+}
+
+model PortfolioItem {
+  id             String          @id @default(cuid())
+  userId         String
+  productId      String?
+  cardId         String?
+  label          String
+  buyPriceAud    Decimal         @db.Decimal(10, 2)
+  sellPriceAud   Decimal?        @db.Decimal(10, 2)
+  quantity       Int             @default(1)
+  store          String?
+  status         PortfolioStatus
+  purchasedAt    DateTime
+  soldAt         DateTime?
+  notes          String?
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product        Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  card           Card?           @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Alert {
+  id              String          @id @default(cuid())
+  userId          String
+  productId       String?
+  cardId          String?
+  type            AlertType
+  status          AlertStatus     @default(ACTIVE)
+  targetPriceAud  Decimal?        @db.Decimal(10, 2)
+  triggeredAt     DateTime?
+  notes           String?
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product?        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card            Card?           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Recommendation {
+  id                 String                @id @default(cuid())
+  action             RecommendationAction
+  confidenceBand     String
+  buyScore           Int
+  flipScore          Int
+  longTermHoldScore  Int
+  ripScore           Int
+  riskScore          Int
+  buyUnderPriceAud   Decimal?              @db.Decimal(10, 2)
+  summary            String
+  reasoning          String
+  productId          String?
+  cardId             String?
+  product            Product?              @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card               Card?                 @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt          DateTime              @default(now())
+}
+
+// Learned sale pattern — built up over time from confirmed drops
+model FlashSalePattern {
+  id              String   @id @default(cuid())
+  source          String   // retailer slug e.g. "eb-games"
+  dayOfWeek       Int      // 0=Sun 1=Mon ... 6=Sat (AEST)
+  hourAest        Int      // 0-23 AEST
+  occurrenceCount Int      @default(1)
+  confidencePct   Int      @default(30) // 0-100, grows with confirmed hits
+  lastSeenAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@unique([source, dayOfWeek, hourAest])
+  @@index([dayOfWeek, hourAest])
+}
+
+// Every confirmed stock event detected — feeds back into pattern learning
+model FlashSaleTrigger {
+  id            String    @id @default(cuid())
+  retailerSlug  String
+  productName   String
+  priceAud      Decimal   @db.Decimal(10, 2)
+  stockStatus   String
+  sourceUrl     String
+  detectedAt    DateTime  @default(now())
+  notifiedAt    DateTime?
+  notifyChannel String    @default("telegram")
+
+  @@index([retailerSlug, detectedAt])
+}
+
+model ShowModeCache {
+  id           String   @id @default(cuid())
+  query        String   @unique
+  name         String
+  setName      String
+  cardNumber   String
+  priceAud     Decimal  @db.Decimal(10, 2)
+  tcgplayerUrl String?  @db.VarChar(500)
+  cachedAt     DateTime @default(now())
+
+  @@index([cachedAt])
+}
+
+model ScoreSnapshot {
+  id                 String       @id @default(cuid())
+  buyScore           Int
+  flipScore          Int
+  longTermHoldScore  Int
+  ripScore           Int
+  riskScore          Int
+  estimated3m        Decimal      @db.Decimal(10, 2)
+  estimated1y        Decimal      @db.Decimal(10, 2)
+  estimated3y        Decimal      @db.Decimal(10, 2)
+  productId          String?
+  cardId             String?
+  product            Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  card               Card?        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt          DateTime     @default(now())
+}
