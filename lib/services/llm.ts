@@ -28,7 +28,7 @@ async function buildLivePartnerContext() {
       },
       take: 5
     }),
-    getReleaseImpactReport()
+    getReleaseImpactReport().catch(() => [])
   ]);
 
   const productLines = products.map((product) => {

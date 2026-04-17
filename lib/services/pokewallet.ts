@@ -296,6 +296,34 @@ async function saveToCacheIfFound(query: string, result: Omit<LiveCardPrice, "fr
   });
 }
 
+export type CardVariant = {
+  id: string;
+  name: string;
+  setName: string;
+  cardNumber: string;
+  rarity: string;
+  priceAud: number | null;
+  tcgplayerUrl: string | null;
+};
+
+export async function searchCardVariants(query: string): Promise<CardVariant[]> {
+  const results = await searchPokewalletCards(query, 12);
+  return results
+    .map((r) => {
+      const pricing = toAudPrices(r);
+      return {
+        id: r.id,
+        name: r.card_info?.clean_name ?? r.card_info?.name ?? query,
+        setName: r.card_info?.set_name ?? "",
+        cardNumber: r.card_info?.card_number ?? "",
+        rarity: r.card_info?.rarity ?? "",
+        priceAud: pricing.aud,
+        tcgplayerUrl: r.tcgplayer?.url ?? null
+      };
+    })
+    .filter((v) => v.priceAud !== null && v.priceAud >= 1);
+}
+
 export async function liveCardLookup(query: string): Promise<LiveCardPrice> {
   try {
     const results = await searchPokewalletCards(query, 12);
