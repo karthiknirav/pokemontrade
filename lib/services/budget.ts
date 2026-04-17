@@ -117,9 +117,12 @@ function buildRecommendation(
   }
 
   if (strategy === "MOMENTUM") {
-    const sorted = [...candidates]
-      .filter((c) => c.changePct !== null)
-      .sort((a, b) => (b.changePct ?? 0) - (a.changePct ?? 0));
+    const sorted = [...candidates].sort((a, b) => {
+      if (a.changePct !== null && b.changePct !== null) return b.changePct - a.changePct;
+      if (a.changePct !== null) return -1;
+      if (b.changePct !== null) return 1;
+      return b.score - a.score;
+    });
 
     const picks: ReturnType<typeof makePick>[] = [];
     let totalSpend = 0;
