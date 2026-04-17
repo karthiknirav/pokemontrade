@@ -63,9 +63,9 @@ export function OcrUploadForm() {
         throw new Error(`Server error (${response.status}): ${text.slice(0, 120)}`);
       }
       if (!response.ok) throw new Error((data.error as string) ?? "OCR failed");
-      setResult(data.summary ?? "OCR completed.");
-      setEntries(Array.isArray(data.entries) ? data.entries : []);
-      setShowModeLines(Array.isArray(data.showModeLines) ? data.showModeLines : []);
+      setResult((data.summary as string) ?? "OCR completed.");
+      setEntries(Array.isArray(data.entries) ? (data.entries as Array<{ label: string; priceAud: number | null }>) : []);
+      setShowModeLines(Array.isArray(data.showModeLines) ? (data.showModeLines as string[]) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "OCR failed");
     } finally {
