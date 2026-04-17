@@ -335,15 +335,39 @@ function buildImageUrl(setId: string | null, cardNumber: string): string | null 
 }
 
 function setIdSortKey(setId: string): number {
-  // Scarlet & Violet: sv1, sv2 … sv8, sv8pt5 → sort descending (higher = newer)
-  const m = setId.match(/^([a-z]+)(\d+)(pt(\d+))?/i);
-  if (!m) return 0;
-  const major = parseInt(m[2], 10) || 0;
-  const minor = m[4] ? parseInt(m[4], 10) : 0;
-  // Newer series prefix gets a generation bonus
-  const series = m[1].toLowerCase();
-  const seriesBonus = series === "sv" ? 10000 : series === "swsh" ? 5000 : series === "sm" ? 2000 : 0;
-  return seriesBonus + major * 100 + minor;
+  const id = setId.toLowerCase();
+
+  // Upcoming AU sets — highest priority
+  if (id.startsWith("me0") || id.startsWith("me1") || id.startsWith("me2")) return 900000;
+
+  // XY era (Mega Evolution) — very popular with AU collectors
+  const xyM = id.match(/^xy(\d*)/);
+  if (xyM) return 700000 + (parseInt(xyM[1] || "0", 10) * 100);
+
+  // Scarlet & Violet (sv prefix), newer sets ranked higher within series
+  const svM = id.match(/^sv(\d+)(pt(\d+))?/);
+  if (svM) {
+    const major = parseInt(svM[1], 10) * 100;
+    const minor = svM[3] ? parseInt(svM[3], 10) : 0;
+    return 600000 + major + minor;
+  }
+
+  // Hidden Fates — special collector set
+  if (id === "sm115" || id.includes("hiddenfates")) return 500000;
+
+  // Sun & Moon
+  const smM = id.match(/^sm(\d*)/);
+  if (smM) return 400000 + (parseInt(smM[1] || "0", 10) * 100);
+
+  // Black & White
+  const bwM = id.match(/^bw(\d*)/);
+  if (bwM) return 300000 + (parseInt(bwM[1] || "0", 10) * 100);
+
+  // Sword & Shield and everything else
+  const swshM = id.match(/^swsh(\d*)/);
+  if (swshM) return 200000 + (parseInt(swshM[1] || "0", 10) * 100);
+
+  return 100000;
 }
 
 export async function searchCardVariants(query: string): Promise<CardVariant[]> {
