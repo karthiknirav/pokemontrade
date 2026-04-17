@@ -86,7 +86,8 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
       const res = await fetch(`/api/show-mode/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Search failed");
-      const results: CardVariant[] = data.data ?? [];
+      // apiOk returns data directly (no {data:} wrapper)
+      const results: CardVariant[] = Array.isArray(data) ? data : (data.data ?? []);
       setVariants(results);
       if (results.length === 0) { setError("No results — try adding card number e.g. 003/132"); return; }
 
