@@ -304,27 +304,67 @@ export type CardVariant = {
   rarity: string;
   priceAud: number | null;
   tcgplayerUrl: string | null;
+  imageUrl: string | null;
 };
+
+// Module-level cache: PokeWallet set_code (PTCGO code) → Pokemon TCG API set.id
+const setIdCache = new Map<string, string>();
+
+async function resolvePokemonTcgSetId(ptcgoCode: string): Promise<string | null> {
+  if (setIdCache.has(ptcgoCode)) return setIdCache.get(ptcgoCode)!;
+  try {
+    const res = await fetch(`https://api.pokemontcg.io/v2/sets?q=ptcgoCode:${ptcgoCode}&select=id,ptcgoCode`, {
+      headers: { "user-agent": "pokemon-profit-intelligence-au/1.0" },
+      next: { revalidate: 86400 }
+    });
+    const data = await res.json();
+    const id: string | null = data.data?.[0]?.id ?? null;
+    if (id) setIdCache.set(ptcgoCode, id);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+function buildImageUrl(setId: string | null, cardNumber: string): string | null {
+  if (!setId || !cardNumber) return null;
+  const num = cardNumber.split("/")[0];
+  if (!num) return null;
+  return `https://images.pokemontcg.io/${setId}/${num}.png`;
+}
 
 export async function searchCardVariants(query: string): Promise<CardVariant[]> {
   // Broad queries (short name, no card number) return many variants — fetch more
   const hasCardNumber = /\d+\/\d+/.test(query);
   const limit = hasCardNumber ? 12 : 30;
   const results = await searchPokewalletCards(query, limit);
-  return results
+
+  const filtered = results.filter((r) => {
+    const pricing = toAudPrices(r);
+    return pricing.aud !== null && pricing.aud >= 1;
+  });
+
+  // Resolve all unique set codes → Pokemon TCG API set IDs in parallel
+  const setCodes = [...new Set(filtered.map((r) => r.card_info?.set_code).filter((c): c is string => !!c))];
+  await Promise.all(setCodes.map((code) => resolvePokemonTcgSetId(code)));
+
+  return filtered
     .map((r) => {
       const pricing = toAudPrices(r);
+      const setCode = r.card_info?.set_code ?? "";
+      const cardNumber = r.card_info?.card_number ?? "";
+      const setId = setCode ? (setIdCache.get(setCode) ?? null) : null;
       return {
         id: r.id,
         name: r.card_info?.clean_name ?? r.card_info?.name ?? query,
         setName: r.card_info?.set_name ?? "",
-        cardNumber: r.card_info?.card_number ?? "",
+        cardNumber,
         rarity: r.card_info?.rarity ?? "",
         priceAud: pricing.aud,
-        tcgplayerUrl: r.tcgplayer?.url ?? null
+        tcgplayerUrl: r.tcgplayer?.url ?? null,
+        imageUrl: buildImageUrl(setId, cardNumber)
       };
     })
-    .filter((v) => v.priceAud !== null && v.priceAud >= 1)
     .slice(0, 20);
 }
 
