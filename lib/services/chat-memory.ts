@@ -24,9 +24,9 @@ async function ensureChatTables() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS user_strategy_profiles (
       user_id VARCHAR(191) NOT NULL PRIMARY KEY,
-      goals TEXT NOT NULL DEFAULT '',
-      preferences TEXT NOT NULL DEFAULT '',
-      notes TEXT NOT NULL DEFAULT '',
+      goals TEXT NULL,
+      preferences TEXT NULL,
+      notes TEXT NULL,
       updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
     )
   `);
@@ -42,6 +42,14 @@ async function ensureChatTables() {
       INDEX chat_messages_user_id_created_at_idx (user_id, created_at)
     )
   `);
+
+  // Migrate existing table: TEXT columns can't have DEFAULT in MySQL — change to NULL
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE user_strategy_profiles
+      MODIFY COLUMN goals TEXT NULL,
+      MODIFY COLUMN preferences TEXT NULL,
+      MODIFY COLUMN notes TEXT NULL
+  `).catch(() => null);
 
   initialized = true;
 }
@@ -70,9 +78,9 @@ export async function getStrategyProfile(userId: string): Promise<StrategyProfil
 
   return {
     userId: row.user_id,
-    goals: row.goals,
-    preferences: row.preferences,
-    notes: row.notes,
+    goals: row.goals ?? "",
+    preferences: row.preferences ?? "",
+    notes: row.notes ?? "",
     updatedAt: row.updated_at.toISOString()
   };
 }
