@@ -334,8 +334,19 @@ function buildImageUrl(setId: string | null, cardNumber: string): string | null 
   return `https://images.pokemontcg.io/${setId}/${num}.png`;
 }
 
+function setIdSortKey(setId: string): number {
+  // Scarlet & Violet: sv1, sv2 … sv8, sv8pt5 → sort descending (higher = newer)
+  const m = setId.match(/^([a-z]+)(\d+)(pt(\d+))?/i);
+  if (!m) return 0;
+  const major = parseInt(m[2], 10) || 0;
+  const minor = m[4] ? parseInt(m[4], 10) : 0;
+  // Newer series prefix gets a generation bonus
+  const series = m[1].toLowerCase();
+  const seriesBonus = series === "sv" ? 10000 : series === "swsh" ? 5000 : series === "sm" ? 2000 : 0;
+  return seriesBonus + major * 100 + minor;
+}
+
 export async function searchCardVariants(query: string): Promise<CardVariant[]> {
-  // Broad queries (short name, no card number) return many variants — fetch more
   const hasCardNumber = /\d+\/\d+/.test(query);
   const limit = hasCardNumber ? 12 : 30;
   const results = await searchPokewalletCards(query, limit);
@@ -343,21 +354,26 @@ export async function searchCardVariants(query: string): Promise<CardVariant[]> 
   return results
     .map((r) => {
       const pricing = toAudPrices(r);
+      const setId = r.card_info?.set_id ?? null;
+      const cardNumber = r.card_info?.card_number ?? "";
       return {
         id: r.id,
         name: r.card_info?.clean_name ?? r.card_info?.name ?? query,
         setName: r.card_info?.set_name ?? "",
-        cardNumber: r.card_info?.card_number ?? "",
+        cardNumber,
         rarity: r.card_info?.rarity ?? "",
         priceAud: pricing.aud,
         tcgplayerUrl: r.tcgplayer?.url ?? null,
-        // Image resolved lazily by the frontend via /api/show-mode/card-image
-        imageUrl: null as string | null,
-        setCode: r.card_info?.set_code ?? ""
+        // Build image URL directly from set_id — no extra API call needed
+        imageUrl: buildImageUrl(setId, cardNumber),
+        setCode: r.card_info?.set_code ?? "",
+        _setId: setId ?? ""
       };
     })
     .filter((v) => v.priceAud !== null && v.priceAud >= 1)
-    .slice(0, 20);
+    .sort((a, b) => setIdSortKey(b._setId) - setIdSortKey(a._setId))
+    .slice(0, 20)
+    .map(({ _setId: _dropped, ...v }) => v);
 }
 
 export async function liveCardLookup(query: string): Promise<LiveCardPrice> {

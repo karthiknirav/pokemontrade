@@ -90,20 +90,23 @@ function CardSearch({ onAdd }: { onAdd: (card: LockedCard) => void }) {
       setVariants(results);
       if (results.length === 0) { setError("No results — try adding card number e.g. 003/132"); return; }
 
-      // Lazy-load images: resolve unique set codes in parallel without blocking results
-      const seen = new Set<string>();
-      const unique = results.filter((v) => v.setCode && !seen.has(v.setCode) && seen.add(v.setCode));
-      Promise.all(
-        unique.map((v) =>
-          fetch(`/api/show-mode/card-image?setCode=${encodeURIComponent(v.setCode)}&number=${encodeURIComponent(v.cardNumber)}`)
-            .then((r) => r.json())
-            .then((d) => ({ setCode: v.setCode, imageUrl: d.imageUrl ?? null }))
-            .catch(() => ({ setCode: v.setCode, imageUrl: null }))
-        )
-      ).then((resolved) => {
-        const map = new Map(resolved.map((r) => [r.setCode, r.imageUrl]));
-        setVariants((prev) => prev.map((v) => ({ ...v, imageUrl: map.get(v.setCode) ?? null })));
-      });
+      // For cards without a direct imageUrl, fall back to the set-code lookup
+      const needsLookup = results.filter((v) => !v.imageUrl && v.setCode);
+      if (needsLookup.length > 0) {
+        const seen = new Set<string>();
+        const unique = needsLookup.filter((v) => !seen.has(v.setCode) && seen.add(v.setCode));
+        Promise.all(
+          unique.map((v) =>
+            fetch(`/api/show-mode/card-image?setCode=${encodeURIComponent(v.setCode)}&number=${encodeURIComponent(v.cardNumber)}`)
+              .then((r) => r.json())
+              .then((d) => ({ setCode: v.setCode, imageUrl: d.imageUrl ?? null }))
+              .catch(() => ({ setCode: v.setCode, imageUrl: null }))
+          )
+        ).then((resolved) => {
+          const map = new Map(resolved.map((r) => [r.setCode, r.imageUrl]));
+          setVariants((prev) => prev.map((v) => (v.imageUrl ? v : { ...v, imageUrl: map.get(v.setCode) ?? null })));
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
