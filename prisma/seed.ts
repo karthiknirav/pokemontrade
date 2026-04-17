@@ -96,6 +96,22 @@ async function main() {
     }
   });
 
+  // Mega Evolution — Ascended Heroes (ME02) — releases April 24 2026 (PREORDER)
+  const setAscendedHeroes = await prisma.tcgSet.create({
+    data: {
+      name: "Mega Evolution — Ascended Heroes",
+      slug: slugify("Mega Evolution Ascended Heroes"),
+      series: "Mega Evolution",
+      language: CardLanguage.ENGLISH,
+      releaseDate: new Date("2026-04-24"),
+      msrpAud: 59.99,
+      blueChip: false,
+      speculative: true,
+      overprintedRisk: 35,
+      notes: "Mega Charizard ex headline card. Confirmed $59.99 booster bundle at Toymate. Apr 24 2026."
+    }
+  });
+
   // Mega Evolution — Perfect Order (ME03) — released March 27 2026
   const setPerfectOrder = await prisma.tcgSet.create({
     data: {
@@ -154,6 +170,7 @@ async function main() {
       ["BIG W",              "https://www.bigw.com.au"],
       ["Coles",              "https://www.coles.com.au"],
       ["Toyworld",           "https://www.toyworld.com.au"],
+      ["Toymate",            "https://www.toymate.com.au"],
       ["Target",             "https://www.target.com.au"],
       ["Kmart",              "https://www.kmart.com.au"],
       ["Gameology",          "https://www.gameology.com.au"],
@@ -181,6 +198,7 @@ async function main() {
       { slug: "kmart",               name: "Kmart",               providerType: "RETAILER"    as const, websiteUrl: "https://www.kmart.com.au",             logoLabel: "KM", trustScore: 80 },
       { slug: "coles",               name: "Coles",               providerType: "RETAILER"    as const, websiteUrl: "https://www.coles.com.au",             logoLabel: "CO", trustScore: 76 },
       { slug: "toyworld",            name: "Toyworld",            providerType: "RETAILER"    as const, websiteUrl: "https://www.toyworld.com.au",          logoLabel: "TW", trustScore: 78 },
+      { slug: "toymate",             name: "Toymate",             providerType: "RETAILER"    as const, websiteUrl: "https://www.toymate.com.au",            logoLabel: "TM", trustScore: 82 },
       { slug: "gameology",           name: "Gameology",           providerType: "RETAILER"    as const, websiteUrl: "https://www.gameology.com.au",         logoLabel: "GO", trustScore: 88 },
       { slug: "cherry-collectables", name: "Cherry Collectables", providerType: "RETAILER"    as const, websiteUrl: "https://www.cherrycollectables.com.au",logoLabel: "CC", trustScore: 90 },
       { slug: "ebay",                name: "eBay AU",             providerType: "MARKETPLACE" as const, websiteUrl: "https://www.ebay.com.au",              logoLabel: "EB", trustScore: 68 },
@@ -324,6 +342,28 @@ async function main() {
       inStock: false,
       notes: "July 17 2026. Mega Darkrai ex. Prerelease July 4-12. Pricing not yet confirmed by AU retailers.",
       setId: setPitchBlack.id
+    }
+  });
+
+  const bundleAscendedHeroes = await prisma.product.create({
+    data: {
+      name: "Ascended Heroes Booster Bundle",
+      slug: slugify("Ascended Heroes Booster Bundle"),
+      productType: ProductType.BOOSTER_BUNDLE,
+      category: ItemCategory.SEALED,
+      sealed: true,
+      language: CardLanguage.ENGLISH,
+      currentMarketPrice: 59.99,
+      lastSoldPrice: 59.99,
+      priceSource: "Toymate AU confirmed preorder",
+      liquidityScore: 60,
+      popularityScore: 80,
+      profitScore: 65,
+      releaseDate: new Date("2026-04-24"),
+      isPreorder: true,
+      inStock: true,
+      notes: "Mega Charizard ex set. Confirmed $59.99 at Toymate. Max 5 per customer. Releases 24 Apr 2026.",
+      setId: setAscendedHeroes.id
     }
   });
 

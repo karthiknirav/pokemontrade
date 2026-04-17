@@ -287,6 +287,52 @@ export const toyworldAdapter: RetailerAdapter = createAdapter("toyworld", [
 ]);
 
 // ---------------------------------------------------------------------------
+// Toymate — direct product page scraping (WooCommerce-style, itemprop prices)
+// ---------------------------------------------------------------------------
+export const toymateAdapter: RetailerAdapter = createAdapter("toymate", [
+  {
+    title: "Ascended Heroes Booster Bundle",
+    url: "https://www.toymate.com.au/pokemon-tcg-ascended-heroes-booster-bundle/",
+    targetSlug: "ascended-heroes-booster-bundle",
+    targetType: "product",
+    fallbackPrice: 59.99,
+    fallbackStatus: InventoryStatus.PREORDER
+  },
+  {
+    title: "Chaos Rising Booster Bundle",
+    url: "https://www.toymate.com.au/pokemon-tcg-chaos-rising-booster-bundle/",
+    targetSlug: "chaos-rising-elite-trainer-box",
+    targetType: "product",
+    fallbackPrice: 59.99,
+    fallbackStatus: InventoryStatus.PREORDER
+  },
+  {
+    title: "Perfect Order Elite Trainer Box",
+    url: "https://www.toymate.com.au/pokemon-tcg-mega-evolutions-3-perfect-order-elite-trainer-box/",
+    targetSlug: "perfect-order-elite-trainer-box",
+    targetType: "product",
+    fallbackPrice: 109,
+    fallbackStatus: InventoryStatus.PREORDER
+  },
+  {
+    title: "Perfect Order Booster Bundle",
+    url: "https://www.toymate.com.au/pokemon-tcg-mega-evolutions-3-perfect-order-booster-bundle/",
+    targetSlug: "perfect-order-elite-trainer-box",
+    targetType: "product",
+    fallbackPrice: 59.99,
+    fallbackStatus: InventoryStatus.PREORDER
+  },
+  {
+    title: "Prismatic Evolutions Booster Bundle",
+    url: "https://www.toymate.com.au/pokemon-tcg-prismatic-evolutions-booster-bundle/",
+    targetSlug: "prismatic-evolutions-elite-trainer-box",
+    targetType: "product",
+    fallbackPrice: 59.99,
+    fallbackStatus: InventoryStatus.OUT_OF_STOCK
+  }
+]);
+
+// ---------------------------------------------------------------------------
 // Gameology — Shopify store, use .js product API for accuracy
 // ---------------------------------------------------------------------------
 export const gameologyAdapter: RetailerAdapter = {
@@ -371,6 +417,7 @@ export const retailerAdapters = [
   kmartAdapter,
   colesAdapter,
   toyworldAdapter,
+  toymateAdapter,
   gameologyAdapter,
   cherryCollectablesAdapter
 ];
