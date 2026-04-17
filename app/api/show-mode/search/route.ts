@@ -11,7 +11,8 @@ export async function GET(request: Request) {
   if (!q) return apiError("q is required");
 
   try {
-    return apiOk(await searchCardVariants(q));
+    const variants = await searchCardVariants(q);
+    return apiOk({ data: variants });
   } catch (err) {
     return apiError(err instanceof Error ? err.message : "Search failed", 500);
   }
